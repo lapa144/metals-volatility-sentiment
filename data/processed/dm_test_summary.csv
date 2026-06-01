@@ -1,0 +1,19 @@
+secid,loss,m1,m2,DM,p_value,mean_d,n,verdict
+GLDRUB_TOM,se,HAR-log,HAR-log-S,0.9727,0.3307,0.002086,773,no significant difference
+GLDRUB_TOM,se,HAR-log,kNN,-0.948,0.3431,-0.013566,773,no significant difference
+GLDRUB_TOM,se,HAR-log-S,kNN,-1.0844,0.2782,-0.015652,773,no significant difference
+GLDRUB_TOM,ae,HAR-log,HAR-log-S,1.76,0.0784,0.002068,773,model2 better
+GLDRUB_TOM,ae,HAR-log,kNN,0.377,0.7062,0.002985,773,no significant difference
+GLDRUB_TOM,ae,HAR-log-S,kNN,0.1158,0.9078,0.000917,773,no significant difference
+GLDRUB_TOM,qlike,HAR-log,HAR-log-S,0.621,0.5346,0.002003,773,no significant difference
+GLDRUB_TOM,qlike,HAR-log,kNN,-2.4049,0.0162,-0.054486,773,model1 better
+GLDRUB_TOM,qlike,HAR-log-S,kNN,-2.3805,0.0173,-0.056489,773,model1 better
+SLVRUB_TOM,se,HAR-log,HAR-log-S,-0.1282,0.898,-0.00066,654,no significant difference
+SLVRUB_TOM,se,HAR-log,kNN,-1.8333,0.0668,-0.056384,654,model1 better
+SLVRUB_TOM,se,HAR-log-S,kNN,-1.89,0.0588,-0.055724,654,model1 better
+SLVRUB_TOM,ae,HAR-log,HAR-log-S,1.8104,0.0702,0.00416,654,model2 better
+SLVRUB_TOM,ae,HAR-log,kNN,-1.6278,0.1036,-0.020338,654,no significant difference
+SLVRUB_TOM,ae,HAR-log-S,kNN,-2.0417,0.0412,-0.024498,654,model1 better
+SLVRUB_TOM,qlike,HAR-log,HAR-log-S,-3.8334,0.0001,-0.042573,654,model1 better
+SLVRUB_TOM,qlike,HAR-log,kNN,-2.8355,0.0046,-0.18769,654,model1 better
+SLVRUB_TOM,qlike,HAR-log-S,kNN,-2.2659,0.0235,-0.145117,654,model1 better

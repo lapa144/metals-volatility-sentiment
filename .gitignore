@@ -1,0 +1,60 @@
+# ── Виртуальные окружения ─────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Python ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# ── Секреты и сессии (НИКОГДА не коммитить) ────────────
+*.env
+.env
+**/app_secrets.py
+*.session
+*.session-journal
+tg_session.session
+
+# ── Базы данных и большие сырые данные ─────────────────
+*.db
+*.sqlite
+data/raw/
+data/sentiment/telegram_news.csv
+
+# ── Артефакты сборки LaTeX ─────────────────────────────
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
+paper/main.lof
+paper/main.lot
+
+# ── Сторонние материалы (не распространяются) ──────────
+references/
+docs/
+
+# ── IDE / OS ──────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.ipynb_checkpoints/
+PROMPT_курсач.md
+
+# ── Telegram Node-приложение: фронтенд, шрифты, ключи (не в репозиторий) ──
+telegram/app/
+telegram/config/
+*.key
+*.crt
+*.pem

@@ -1,0 +1,195 @@
+\section{Тестирование программного комплекса}
+
+\subsection{Стратегия тестирования}
+
+Тестирование программного комплекса проводилось на трёх уровнях:
+\textit{модульном} (проверка корректности отдельных функций),
+\textit{интеграционном} (проверка взаимодействия модулей через файловый интерфейс)
+и \textit{системном} (проверка сквозного выполнения полного пайплайна).
+
+\subsection{Модульные тесты}
+
+\subsubsection{Тестирование вычисления реализованной волатильности}
+
+Для оценщиков Garman--Klass и Parkinson проверялись:
+\begin{enumerate}
+    \item \textbf{Граничные случаи.}
+          При $H_t = L_t = O_t = C_t$ (свеча без движения)
+          оба оценщика возвращают $\widehat{\sigma}^2_t = 0$.
+    \item \textbf{Масштабирование.}
+          При умножении всех цен на константу $k > 0$
+          логарифмическая волатильность не изменяется:
+          $\widehat{\sigma}^2(kO, kH, kL, kC) = \widehat{\sigma}^2(O, H, L, C)$.
+    \item \textbf{Воспроизводимость.}
+          Повторный запуск \texttt{compute\_rv.py} на тех же данных
+          даёт побайтово идентичный CSV-файл.
+    \item \textbf{Сравнение оценщиков.}
+          На синтетических данных, сгенерированных из геометрического
+          броуновского движения с известной дисперсией $\sigma^2 = 0{,}04$,
+          среднее значение оценщика Garman--Klass отклоняется от истинного
+          не более чем на $5\%$ при $n > 250$ наблюдений.
+\end{enumerate}
+
+\subsubsection{Тестирование парсеров}
+
+Каждый парсер тестировался следующим образом:
+
+\begin{itemize}
+    \item \textbf{download\_moex.py:} запрос на однодневный период возвращает
+          ровно одну строку OHLCV; колонки \texttt{open, high, low, close, volume}
+          присутствуют и имеют корректные типы данных (\texttt{float64}).
+    \item \textbf{parse\_cbr.py:} курс USD/RUB на 01.01.2022 соответствует
+          официальному значению ЦБ РФ (74{,}29 руб.) с точностью до копейки.
+    \item \textbf{parse\_fred.py:} значение VIX на 24.02.2022 превышает 30{,}0
+          (проверка корректности загрузки данных о волатильности в период шока).
+    \item \textbf{aggregate\_sentiment.py:} результирующий датафрейм содержит
+          ровно 25 признаков; доля NaN-значений равна 0 после forward fill.
+\end{itemize}
+
+\subsubsection{Тестирование HAR-модели}
+
+\begin{enumerate}
+    \item \textbf{Детерминизм.}
+          Модель HAR-log при двух последовательных запусках
+          на одних данных возвращает идентичные коэффициенты.
+    \item \textbf{Структура предсказания.}
+          При expanding window с начальным окном 120 дней
+          длина вектора прогнозов совпадает с числом тестовых наблюдений.
+    \item \textbf{Знаки коэффициентов.}
+          На реальных данных GLDRUB\_TOM все три коэффициента
+          $\hat\beta_d, \hat\beta_w, \hat\beta_m > 0$,
+          что соответствует теоретическим ожиданиям модели HAR-RV.
+\end{enumerate}
+
+\subsubsection{Тестирование XGBoost}
+
+\begin{enumerate}
+    \item \textbf{Воспроизводимость.}
+          Фиксация \texttt{random\_state=42} обеспечивает идентичные метрики
+          при повторных запусках.
+    \item \textbf{Отсутствие утечки данных.}
+          Разбиение 60/40 производится строго по времени:
+          ни один тестовый индекс не присутствует в обучающей выборке.
+    \item \textbf{Корректность метрик.}
+          Значение $R^2_{\mathrm{OOS}}$ вычисляется относительно
+          исторического среднего обучающей выборки,
+          а не тестовой (проверка реализации формулы~Goyal--Welch).
+\end{enumerate}
+
+\subsection{Интеграционное тестирование}
+
+Интеграционный тест запускает сквозной пайплайн на коротком
+подпериоде данных (2023-01-01~--- 2023-12-31):
+
+\begin{enumerate}
+    \item \textbf{download\_moex.py} → \texttt{GLDRUB\_TOM\_1d.csv} (248 строк)
+    \item \textbf{compute\_rv.py} → \texttt{rv\_features.csv} (246 строк, 10 признаков)
+    \item \textbf{aggregate\_sentiment.py} → \texttt{daily\_sentiment.csv} (365 строк, 25 признаков)
+    \item \textbf{ml\_models.py} → \texttt{GLDRUB\_TOM\_xgb\_predictions.csv}
+\end{enumerate}
+
+Тест проходит успешно, если:
+\begin{itemize}
+    \item ни один из шагов не завершился с исключением;
+    \item все выходные файлы созданы с ненулевым числом строк;
+    \item $R^2_{\mathrm{OOS}}$ XGBoost на 2023~г.\ превышает $0{,}0$
+          (модель превосходит наивный прогноз историческим средним).
+\end{itemize}
+
+\subsection{Системное тестирование}
+
+Полный цикл обновления данных и переобучения моделей тестировался
+на периоде 2018--2026 (производительность):
+
+\begin{itemize}
+    \item Загрузка котировок MOEX (4 инструмента): $\approx$\,45 сек.
+    \item Загрузка CBR + FRED: $\approx$\,30 сек.
+    \item Загрузка GDELT (инкрементальный режим, последние 30 дней): $\approx$\,5 мин.
+    \item Агрегация sentiment: $<$\,10 сек.
+    \item Обучение XGBoost (expanding window, 2 инструмента): $\approx$\,4 мин.
+    \item Запуск Flask-сервера: $<$\,5 сек.
+\end{itemize}
+
+Суммарное время полного цикла составило $\approx$\,12 минут,
+что удовлетворяет нефункциональному требованию
+(не более 30 минут, раздел~\ref{sec:requirements}).
+
+\subsection{Объёмные характеристики кода и данных}
+\label{sec:volume}
+
+Согласно требованиям к экспериментальной части программного проекта,
+ниже приведены объёмные характеристики разработанного программного
+комплекса и используемых данных
+(таблицы~\ref{tab:vol_code} и~\ref{tab:vol_data}).
+
+\begin{table}[h!]
+\centering
+\caption{Объём программного кода по подсистемам}
+\label{tab:vol_code}
+\begin{tabular}{lr}
+\hline
+Подсистема (директория) & Строк кода \\
+\hline
+\texttt{src/data/} (7 парсеров + агрегатор)        & 2\,378 \\
+\texttt{src/models/} (HAR, XGBoost, kNN, RV, метрики) & 1\,440 \\
+\texttt{src/nlp/}    (обработка текстов)            &    432 \\
+\texttt{src/web/}    (Flask-роуты, шаблоны)         &    451 \\
+\texttt{app.py}      (точка входа дашборда)         &    516 \\
+\hline
+\textbf{Всего Python-кода}                          & \textbf{5\,217} \\
+\hline
+\end{tabular}
+
+\medskip
+\raggedright
+\footnotesize Суммарный объём исходного кода~--- $\approx$\,309 KB.
+\end{table}
+
+\begin{table}[h!]
+\centering
+\caption{Объём входных и промежуточных датасетов}
+\label{tab:vol_data}
+\small
+\begin{tabular}{lrl}
+\hline
+Файл & Размер & Содержание \\
+\hline
+\texttt{data/processed/metals\_1d\_panel.csv}   & 310 KB & OHLCV 4-х инструментов \\
+\texttt{data/processed/rv\_features.csv}         & 657 KB & RV + HAR-лаги (4\,238 строк) \\
+\texttt{data/sentiment/daily\_sentiment.csv}     & 737 KB & 25 признаков $\times$ 3\,070 дней \\
+\texttt{data/sentiment/cbr\_data.csv}            & 211 KB & Курсы и ставка ЦБ РФ \\
+\texttt{data/sentiment/fred\_macro.csv}          & 336 KB & Brent, VIX, DXY, CPI, FED \\
+\texttt{data/sentiment/google\_trends.csv}       & 246 KB & 3 группы запросов \\
+\texttt{data/sentiment/gdelt\_sentiment.csv}     &  97 KB & Tone из GDELT GKG \\
+\texttt{data/sentiment/rss\_news.csv}            &  66 KB & RSS 6 источников \\
+\texttt{data/sentiment/telegram\_news.csv}       &  19 MB & 23\,733 сырых сообщений \\
+\texttt{data/sentiment/telegram\_sentiment.csv}  &  59 KB & Дневная агрегация Telegram \\
+\hline
+\end{tabular}
+\end{table}
+
+Прогоны моделей в проекте сгенерировали 15 артефактов в
+\texttt{data/processed/har\_results/} (прогнозы и метрики для трёх
+спецификаций каждого из двух инструментов плюс файлы ablation)
+и 6 артефактов в \texttt{data/processed/ml\_results/}
+(XGBoost и kNN для GLDRUB/SLVRUB плюс сводные таблицы).
+Сводная таблица попарного DM-теста (12 пар $\times$ 3~типа потерь)
+сохраняется в \texttt{data/processed/dm\_test\_summary.csv}.
+
+\subsection{Валидация данных}
+
+Помимо функционального тестирования проводилась автоматическая
+валидация качества данных:
+
+\begin{enumerate}
+    \item \textbf{Монотонность цен:}
+          $H_t \geq \max(O_t, C_t)$ и $L_t \leq \min(O_t, C_t)$
+          для каждой свечи. Нарушений не обнаружено.
+    \item \textbf{Временной охват:}
+          непрерывность дат в \texttt{daily\_sentiment.csv}
+          (отсутствие пропущенных календарных дней) ~--- проверка пройдена.
+    \item \textbf{Заполненность признаков:}
+          доля NaN по каждому из 25 признаков равна 0~\% после агрегации.
+    \item \textbf{Диапазон sentiment:}
+          все значения \texttt{sentiment\_combined} $\in [-1{,}0;\, 1{,}0]$.
+\end{enumerate}

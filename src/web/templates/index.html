@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Свечи по MOEX (металлы в RUB)</h1>
+
+  <form method="post" action="/run" class="card">
+    <label>Инструмент</label>
+    <select name="secid" required>
+      {% for sid, name in secids.items() %}
+        <option value="{{ sid }}" {% if sid == default_secid %}selected{% endif %}>{{ sid }} ({{ name }})</option>
+      {% endfor %}
+    </select>
+
+    <label>Дата с</label>
+    <input name="date_from" type="date" value="{{ default_date_from }}" required>
+
+    <label>Дата по</label>
+    <input name="date_till" type="date" value="{{ default_date_till }}" required>
+
+    <label>Интервал</label>
+    <select name="interval">
+      {% for v in intervals %}
+        <option value="{{ v }}" {% if v == default_interval %}selected{% endif %}>{{ v }}</option>
+      {% endfor %}
+    </select>
+
+    <button type="submit">Получить свечи</button>
+  </form>
+
+  <div class="card">
+    <h3>Источник данных: MOEX ISS</h3>
+    <p class="hint">Сайт получает свечные данные по металлам (золото, серебро, платина, палладий) с Московской биржи через публичный API ISS. Максимальный период — 365 дней.</p>
+  </div>
+{% endblock %}

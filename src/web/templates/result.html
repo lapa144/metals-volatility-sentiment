@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Результат</h1>
+  <p class="hint" style="font-size: 15px; line-height: 1.6;">
+    Инструмент: <b>{{ secid }}</b> ({{ secid_name }}) ·
+    интервал: <b>{{ interval }}</b> ·
+    период: <b>{{ date_from }}</b> — <b>{{ date_till }}</b> ·
+    свечей: <b>{{ n }}</b>
+  </p>
+
+  {% if has_data %}
+  <div class="card">
+    <h3 style="margin-top:0">График цены закрытия</h3>
+    <div class="chart-wrap">
+      <img src="{{ plot_url }}" alt="График свечей">
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Последние свечи (до 50)</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Open</th>
+          <th>High</th>
+          <th>Low</th>
+          <th>Close</th>
+          <th>Volume</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in table_rows %}
+        <tr>
+          <td>{{ row.begin }}</td>
+          <td>{{ row.open }}</td>
+          <td>{{ row.high }}</td>
+          <td>{{ row.low }}</td>
+          <td>{{ row.close }}</td>
+          <td>{{ row.volume }}</td>
+          <td>{{ row.value }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card">
+    <p>Нет данных за период.</p>
+  </div>
+  {% endif %}
+
+  <p><a href="/">← Назад</a></p>
+{% endblock %}
